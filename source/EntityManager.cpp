@@ -16,13 +16,8 @@ void EntityManager::changeEntityName(Entity &ent, const std::string &from, const
 }
 
 EntityManager::EntityManager(World &w) :
+  m_lastAllocatedId(1),
   world(w) {
-}
-
-Entity& EntityManager::create() {
-  const EntityId id = Util::Rand();
-  emplace_back(*this, id);
-  return back();
 }
 
 Entity& EntityManager::getById(EntityId id) {

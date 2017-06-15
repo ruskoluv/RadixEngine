@@ -1,66 +1,32 @@
-#ifndef RADIX_COMPONENT_PLAYER_HPP
-#define RADIX_COMPONENT_PLAYER_HPP
+#ifndef RADIX_ENTITIES_PLAYER_HPP
+#define RADIX_ENTITIES_PLAYER_HPP
 
-#include <memory>
-#include <functional>
+#include <array>
 
-#include <bullet/btBulletDynamicsCommon.h>
-#include <bullet/BulletCollision/CollisionDispatch/btCollisionWorld.h>
 #include <bullet/BulletCollision/CollisionDispatch/btGhostObject.h>
-#include <bullet/BulletDynamics/Character/btKinematicCharacterController.h>
+#include <bullet/BulletCollision/CollisionShapes/btConvexShape.h>
 
-#include <radix/PlayerTask.hpp>
-#include <radix/BaseGame.hpp>
-#include <radix/component/Component.hpp>
-#include <radix/component/Transform.hpp>
-#include <radix/component/Trigger.hpp>
 #include <radix/Entity.hpp>
-#include <radix/EntityManager.hpp>
 #include <radix/physics/KinematicCharacterController.hpp>
 
 namespace radix {
+namespace entities {
 
-class Player : public Component {
+class Player : public Entity {
 public:
-  std::map<int, PlayerTask*> tasks;
   std::shared_ptr<btConvexShape> shape;
   btPairCachingGhostObject *obj;
   KinematicCharacterController *controller;
-  Trigger* trigger;
 
   Vector3f velocity, headAngle;
   bool flying, noclip, frozen;
   float speed;
   float stepCounter;
 
-  Player(Entity&);
+  Player(const CreationParams&);
   ~Player();
 
-  const char* getName() const {
-    return "Player";
-  }
-
-  TypeId getTypeId() const {
-    return Component::getTypeId<std::remove_reference<decltype(*this)>::type>();
-  }
-
-  void serialize(serine::Archiver&);
-
-  template<typename T>
-  inline T& addTask() {
-    static_assert(std::is_base_of<PlayerTask, T>::value, "T must be a PlayerTask");
-    T *result = new T;
-    if (!tasks.empty()) {
-      int id = tasks.rbegin()->first + 1;
-      result->id = id;
-      tasks.insert(std::make_pair(id, result));
-    } else {
-      result->id = 0;
-      tasks.insert(std::make_pair(0, result));
-    }
-    return *result;
-  }
-  void removeTask(int id);
+  void tick(TDelta);
 
   Quaternion getBaseHeadOrientation() const;
   Quaternion getHeadOrientation() const;
@@ -69,7 +35,7 @@ public:
   }
 };
 
-class ContactPlayerCallback : public btCollisionWorld::ContactResultCallback {
+/* TODO class ContactPlayerCallback : public btCollisionWorld::ContactResultCallback {
 public:
   ContactPlayerCallback(BaseGame &game) : btCollisionWorld::ContactResultCallback(), game(game) { };
 
@@ -93,8 +59,9 @@ public:
     }
     return 0;
   };
-};
+};*/
 
+} /* namespace entities */
 } /* namespace radix */
 
-#endif /* RADIX_COMPONENT_PLAYER_HPP */
+#endif /* RADIX_ENTITIES_PLAYER_HPP */

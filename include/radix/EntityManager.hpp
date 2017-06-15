@@ -3,6 +3,8 @@
 
 #include <list>
 #include <unordered_map>
+#include <utility>
+#include <type_traits>
 
 #include <radix/Entity.hpp>
 
@@ -13,31 +15,43 @@ class World;
 /** \class EntityManager
  * @brief Manager and container of @ref Entity "entities"
  */
-class EntityManager final : protected std::list<Entity> {
+class EntityManager final : protected std::list<std::unique_ptr<Entity>> {
 private:
   friend class Entity;
   std::unordered_map<std::string, Entity&> nameMap;
   void changeEntityName(Entity&, const std::string&, const std::string&);
 
+  EntityId m_lastAllocatedId;
+  EntityId allocateId() {
+    return m_lastAllocatedId++;
+  }
+
+  using Base = std::list<std::unique_ptr<Entity>>;
+
 public:
-  using std::list<Entity>::front;
-  using std::list<Entity>::back;
-  using std::list<Entity>::begin;
-  using std::list<Entity>::cbegin;
-  using std::list<Entity>::end;
-  using std::list<Entity>::cend;
-  using std::list<Entity>::rbegin;
-  using std::list<Entity>::crbegin;
-  using std::list<Entity>::rend;
-  using std::list<Entity>::crend;
-  using std::list<Entity>::empty;
-  using std::list<Entity>::size;
-  using std::list<Entity>::max_size;
+  using Base::front;
+  using Base::back;
+  using Base::begin;
+  using Base::cbegin;
+  using Base::end;
+  using Base::cend;
+  using Base::rbegin;
+  using Base::crbegin;
+  using Base::rend;
+  using Base::crend;
+  using Base::empty;
+  using Base::size;
+  using Base::max_size;
 
   World &world;
   EntityManager(World&);
 
-  Entity& create();
+  template<typename T, typename... Args>
+  T& create(Args... args) {
+    static_assert(std::is_base_of<Entity, T>::value, "T must derive from Entity");
+    emplace_back(Entity::CreationParams(world, allocateId()), std::forward<Args>(args)...);
+    return back();
+  }
 
   /**
    * Gets the reference to the entity with specified ID.

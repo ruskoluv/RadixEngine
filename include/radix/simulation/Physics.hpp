@@ -1,15 +1,19 @@
-#ifndef RADIX_PHYSICS_SYSTEM_HPP
-#define RADIX_PHYSICS_SYSTEM_HPP
+#ifndef RADIX_SIMULATION_PHYSICS_HPP
+#define RADIX_SIMULATION_PHYSICS_HPP
 
 #include <unordered_set>
 
-#include <bullet/btBulletDynamicsCommon.h>
+#include <bullet/BulletCollision/CollisionDispatch/btCollisionWorld.h>
+#include <bullet/BulletCollision/CollisionDispatch/btDefaultCollisionConfiguration.h>
 #include <bullet/BulletCollision/CollisionDispatch/btGhostObject.h>
+#include <bullet/BulletDynamics/ConstraintSolver/btSequentialImpulseConstraintSolver.h>
+#include <bullet/BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
 
 #include <radix/core/event/EventDispatcher.hpp>
-#include <radix/system/System.hpp>
+#include <radix/simulation/Simulation.hpp>
 
 namespace radix {
+namespace simulation {
 
 class CollisionDispatcher;
 class Uncollider;
@@ -21,7 +25,8 @@ public:
   CheckCollisionCallback(bool* remove) : ContactResultCallback(), remove(remove) { };
 
   virtual btScalar addSingleResult(btManifoldPoint& cp,	const btCollisionObjectWrapper* colObj0Wrap,
-                                   int partId0, int index0,const btCollisionObjectWrapper* colObj1Wrap, int partId1, int index1) {
+      int partId0, int index0,const btCollisionObjectWrapper* colObj1Wrap, int partId1,
+      int index1) {
     *remove = false;
     return 0;
   }
@@ -50,10 +55,8 @@ public:
   }
 };
 
-class PhysicsSystem : public System {
+class Physics final : public Simulation {
 private:
-  static PhysicsSystem *instance;
-
   EventDispatcher::CallbackHolder cbCompAdd, cbCompRem;
 
   friend class Uncollider;
@@ -66,16 +69,13 @@ private:
   btSequentialImpulseConstraintSolver *solver;
   btDiscreteDynamicsWorld *physicsWorld;
   btGhostPairCallback *gpCallback;
+
 public:
-  PhysicsSystem(World&, BaseGame *game);
-  ~PhysicsSystem();
+  Physics(World&, BaseGame *game);
+  ~Physics();
 
   const char* getName() const {
-    return "PhysicsSystem";
-  }
-
-  TypeId getTypeId() const {
-    return System::getTypeId<std::remove_reference<decltype(*this)>::type>();
+    return "Physics";
   }
 
   btDiscreteDynamicsWorld& getPhysicsWorld() const {
@@ -92,7 +92,7 @@ public:
   void checkCollisions();
 
   struct CollisionAddedEvent : public Event {
-    static constexpr StaticEventTypeName TypeName = "radix/PhysicsSystem:CollisionAdded";
+    static constexpr StaticEventTypeName TypeName = "radix/simulation/Physics:CollisionAdded";
     const EventTypeName getTypeName() const {
       return TypeName;
     }
@@ -107,7 +107,7 @@ public:
   };
 
   struct CollisionRemovedEvent : public Event {
-    static constexpr StaticEventTypeName TypeName = "radix/PhysicsSystem:CollisionRemoved";
+    static constexpr StaticEventTypeName TypeName = "radix/simulation/Physics:CollisionRemoved";
     const EventTypeName getTypeName() const {
       return TypeName;
     }
@@ -122,6 +122,7 @@ public:
   };
 };
 
+} /* namespace simulation */
 } /* namespace radix */
 
-#endif /* RADIX_PHYSICS_SYSTEM_HPP */
+#endif /* RADIX_SIMULATION_PHYSICS_HPP */

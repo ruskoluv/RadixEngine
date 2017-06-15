@@ -1,4 +1,4 @@
-#include <radix/component/RigidBody.hpp>
+#include <radix/entities/RigidBody.hpp>
 
 namespace radix {
 
@@ -28,6 +28,32 @@ RigidBody::~RigidBody() {
 
 void RigidBody::serialize(serine::Archiver &ar) {
   /// @todo RigidBody serialization
+}
+
+void RigidBody::setPosition(const Vector3f &val) {
+  position = val;
+  if (entity.hasComponent<RigidBody>()) {
+    btRigidBody &rb = *entity.getComponent<RigidBody>().body;
+    btTransform t = rb.getWorldTransform();
+    t.setOrigin(val);
+    rb.setWorldTransform(t);
+  } else if (entity.hasComponent<Player>()) {
+    entity.getComponent<Player>().controller->warp(val);
+  }
+}
+
+void RigidBody::setScale(const Vector3f &val) {
+  scale = val;
+}
+
+void RigidBody::setOrientation(const Quaternion &val) {
+  orientation = val;
+  if (entity.hasComponent<RigidBody>()) {
+    btRigidBody &rb = *entity.getComponent<RigidBody>().body;
+    btTransform t = rb.getWorldTransform();
+    t.setRotation(val);
+    rb.setWorldTransform(t);
+  }
 }
 
 } /* namespace radix */

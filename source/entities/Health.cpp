@@ -1,4 +1,4 @@
-#include <radix/component/Health.hpp>
+#include <radix/entities/Health.hpp>
 
 #include <serine/Archiver.hpp>
 

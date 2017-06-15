@@ -5,22 +5,22 @@
 #include <memory>
 #include <type_traits>
 
+#include <radix/Transform.hpp>
 #include <radix/core/event/Event.hpp>
-#include <radix/component/Component.hpp>
+#include <radix/core/types/TimeDelta.hpp>
 #include <radix/env/Util.hpp>
 
 namespace radix {
 
-class EntityManager;
+class World;
 
 using EntityId = uint32_t;
 
 /** \class Entity
- * @brief ECS entity, Component container
  * It is created like this:
  * @snippet source/data/map/XmlMapLoader.cpp Creating an Entity
  */
-class Entity {
+class Entity : protected Transform {
 private:
   friend class EntityManager;
 
@@ -29,45 +29,12 @@ private:
   Entity(Entity&&) = delete;
   Entity& operator=(Entity&&) = delete;
 
-  void addComponent(ComponentTypeId, Component*);
-  void removeComponent(ComponentTypeId);
-
   /**
    * Entity's name. Used to find a specific entity from the @ref World entity list.
    */
-  std::string name;
+  std::string m_name;
 
 public:
-  struct ComponentAddedEvent : public Event {
-    static constexpr StaticEventTypeName TypeName = "radix/Entity:ComponentAdded";
-    const EventTypeName getTypeName() const {
-      return TypeName;
-    }
-    static constexpr StaticEventType Type = TypeNameHash(TypeName);
-    const EventType getType() const {
-      return Type;
-    }
-
-    Entity &entity;
-    Component &component;
-    ComponentAddedEvent(Entity &e, Component &c) :
-      entity(e), component(c) {}
-  };
-  struct ComponentRemovedEvent : public Event {
-    static constexpr StaticEventTypeName TypeName = "radix/Entity:ComponentRemoved";
-    const EventTypeName getTypeName() const {
-      return TypeName;
-    }
-    static constexpr StaticEventType Type = TypeNameHash(TypeName);
-    const EventType getType() const {
-      return Type;
-    }
-
-    Entity &entity;
-    Component &component;
-    ComponentRemovedEvent(Entity &e, Component &c) :
-      entity(e), component(c) {}
-  };
   struct NameChangedEvent : public Event {
     static constexpr StaticEventTypeName TypeName = "radix/Entity:NameChanged";
     const EventTypeName getTypeName() const {
@@ -85,14 +52,19 @@ public:
   };
 
 
-  EntityManager &manager;
-  Entity(EntityManager &manager, EntityId id) :
-    manager(manager), id(id) {
-  }
+  World &world;
 
-  ~Entity() {
-    clearComponents();
-  }
+  struct CreationParams {
+    World &world;
+    EntityId id;
+    CreationParams(World &world, EntityId id) :
+      world(world),
+      id(id) {
+    }
+  };
+
+  Entity(const CreationParams &cp);
+  virtual ~Entity();
 
 
   /**
@@ -110,44 +82,44 @@ public:
   }
 
 
-  std::string getName() const {
-    return name;
+  inline void privSetPosition(const Vector3f &v) {
+    position = v;
+  }
+  inline void privSetScale(const Vector3f &v) {
+    scale = v;
+  }
+  inline void privSetOrientation(const Quaternion &v) {
+    orientation = v;
+  }
+
+  inline const Vector3f& getPosition() const {
+    return position;
+  }
+  virtual void setPosition(const Vector3f&);
+
+  inline const Vector3f& getScale() const {
+    return scale;
+  }
+  virtual void setScale(const Vector3f&);
+
+  inline const Quaternion& getOrientation() const {
+    return orientation;
+  }
+  virtual void setOrientation(const Quaternion&);
+
+
+  std::string name() const {
+    return m_name;
   }
   void setName(const std::string&);
 
 
-  std::array<std::unique_ptr<Component>, Component::MaxId> components;
+  virtual std::string fullClassName() = 0;
+  virtual std::string className() = 0;
 
-  template<typename T, typename... TArgs>
-  T& addComponent(TArgs&&... mArgs) {
-    static_assert(std::is_base_of<Component, T>::value, "T must be a Component");
-    if (hasComponent<T>()) {
-      Util::Log(Warning) << "Overwriting a " << typeid(T).name() << " component";
-    }
-    T* result(new T(*this, std::forward<TArgs>(mArgs)...));
-    Component::TypeId id = Component::getTypeId<T>();
-    addComponent(id, result);
-    return *result;
-  }
+  virtual std::string typeName();
 
-  template<typename T>
-  inline bool hasComponent() const {
-    static_assert(std::is_base_of<Component, T>::value, "T must be a Component");
-    return components[Component::getTypeId<T>()].get() != nullptr;
-  }
-
-  template<typename T>
-  inline T& getComponent() const {
-    static_assert(std::is_base_of<Component, T>::value, "T must be a Component");
-    return *reinterpret_cast<T*>(components[Component::getTypeId<T>()].get());
-  }
-
-  template<class T>
-  void removeComponent() {
-    removeComponent(Component::getTypeId<T>());
-  }
-
-  void clearComponents();
+  virtual void tick(TDelta);
 };
 
 } /* namespace radix */

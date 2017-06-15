@@ -1,4 +1,4 @@
-#include <radix/system/PhysicsSystem.hpp>
+#include <radix/simulation/Physics.hpp>
 
 #include <radix/component/Player.hpp>
 #include <radix/component/RigidBody.hpp>
@@ -6,6 +6,7 @@
 #include <radix/physics/Uncollider.hpp>
 
 namespace radix {
+namespace simulation {
 
 std::unordered_set<CollisionInfo, CollisionInfoHash, CollisionInfoEqual> PhysicsSystem::collisions;
 PhysicsSystem* PhysicsSystem::instance;
@@ -25,7 +26,7 @@ PhysicsSystem::PhysicsSystem(World &world, BaseGame *game) :
   filterCallback = new Uncollider(world);
   //physWorld->getPairCache()->setOverlapFilterCallback(filterCallback);
   dispatcher->setNearCallback(Uncollider::nearCallback);
-  physicsWorld->setGravity(btVector3(0, -9.8, 0));
+  physicsWorld->setGravity(btVector3(0, -9.80665, 0));
 
   gContactProcessedCallback = reinterpret_cast<ContactProcessedCallback>
   (&PhysicsSystem::contactProcessedCallback);
@@ -145,4 +146,5 @@ void PhysicsSystem::checkCollisions() {
   }
 }
 
+} /* namespace simulation */
 } /* namespace radix */
