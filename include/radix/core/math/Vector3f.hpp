@@ -123,11 +123,19 @@ struct Vector3f : public serine::Serializable {
 constexpr inline float dot(const Vector3f &v1, const Vector3f &v2) {
   return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
 }
+constexpr inline bool isOthrogonal(const Vector 3f &v) { return this->dot(this, v) == 0 ? true : false; }
+constexpr inline bool isOthrogonal(const Vector 3f &v1, const Vector& v2) {
+  bool result;
+  return (result.dotf
 
 Vector3f cross(const Vector3f &v1, const Vector3f &v2);
 
+//length can be negative and 0. n = u/|u|. |u| => normalize must return positive value, and can not have division by zero.
+//to prevent any bugs/mishaps I recommend initiating a parameter.
 inline Vector3f normalize(const Vector3f &v) {
-  return v / v.length();
+  //return v / v.length();
+  if(v.length > 0)
+    return v / v.length();
 }
 
 } /* namespace radix */
