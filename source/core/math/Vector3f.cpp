@@ -29,6 +29,13 @@ float Vector3f::length() const {
   return sqrt(x * x + y * y + z * z);
 }
 
+float Vector3f::sqrMagnitude(){
+  return static_cast<const Vector3f&>(*this).sqrMagnitude();
+}
+
+float Vector3f::sqrMagnitude() const{
+  return pow(this->length(), 2);
+}
 std::string Vector3f::str() const {
   std::stringstream ss;
   ss << "(" << x << ", " << y << ", " << z << ")";
